@@ -1,0 +1,166 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX 10
+
+// Function to calculate Turnaround Time and Waiting Time for Round Robin and Priority Scheduling
+void findWaitingTime(int n, int bt[], int at[], int wt[], int tat[], int quantum) {
+    int rem_bt[n]; // remaining burst time
+    for (int i = 0; i < n; i++) {
+        rem_bt[i] = bt[i];
+    }
+
+    int time = 0; // Current time
+    int done = 0; // Count of completed processes
+
+    while (done < n) {
+        for (int i = 0; i < n; i++) {
+            if (rem_bt[i] > 0) {
+                if (rem_bt[i] > quantum) {
+                    time += quantum;
+                    rem_bt[i] -= quantum;
+                } else {
+                    time += rem_bt[i];
+                    wt[i] = time - at[i] - bt[i];
+                    tat[i] = time - at[i];
+                    rem_bt[i] = 0;
+                    done++;
+                }
+            }
+        }
+    }
+}
+
+// Round Robin Scheduling
+void roundRobin(int n, int bt[], int at[], int wt[], int tat[], int quantum) {
+    findWaitingTime(n, bt, at, wt, tat, quantum);
+}
+
+// Priority Scheduling (Non-preemptive)
+void prioritySchedulingNonPreemptive(int n, int bt[], int at[], int wt[], int tat[], int priority[]) {
+    // Sort processes based on priority
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (priority[i] > priority[j]) {
+                int temp = priority[i];
+                priority[i] = priority[j];
+                priority[j] = temp;
+
+                temp = bt[i];
+                bt[i] = bt[j];
+                bt[j] = temp;
+
+                temp = at[i];
+                at[i] = at[j];
+                at[j] = temp;
+            }
+        }
+    }
+
+    int time = 0;
+    for (int i = 0; i < n; i++) {
+        if (time < at[i])
+            time = at[i];
+        wt[i] = time - at[i];
+        tat[i] = wt[i] + bt[i];
+        time += bt[i];
+    }
+}
+
+// Priority Scheduling (Preemptive)
+void prioritySchedulingPreemptive(int n, int bt[], int at[], int wt[], int tat[], int priority[]) {
+    int time = 0;
+    int done = 0;
+    int rem_bt[n]; // remaining burst time
+    int completed[n]; // mark completed processes
+
+    // Initialize arrays
+    for (int i = 0; i < n; i++) {
+        rem_bt[i] = bt[i];
+        completed[i] = 0;
+    }
+
+    while (done < n) {
+        int idx = -1;
+        int min_priority = 9999;
+        for (int i = 0; i < n; i++) {
+            if (at[i] <= time && rem_bt[i] > 0 && priority[i] < min_priority) {
+                min_priority = priority[i];
+                idx = i;
+            }
+        }
+
+        if (idx != -1) {
+            rem_bt[idx]--;
+            time++;
+            if (rem_bt[idx] == 0) {
+                tat[idx] = time - at[idx];
+                wt[idx] = tat[idx] - bt[idx];
+                completed[idx] = 1;
+                done++;
+            }
+        } else {
+            time++;
+        }
+    }
+}
+
+// Function to print the process information
+void printResults(int n, int pid[], int at[], int bt[], int wt[], int tat[]) {
+    printf("PID\tArrival Time\tBurst Time\tWaiting Time\tTurnaround Time\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t\t%d\t\t%d\t\t%d\n", pid[i], at[i], bt[i], wt[i], tat[i]);
+    }
+}
+
+int main() {
+    int n, choice;
+    int pid[MAX], bt[MAX], at[MAX], wt[MAX], tat[MAX], priority[MAX];
+
+    printf("Enter the number of processes: ");
+    scanf("%d", &n);
+
+    printf("Enter the arrival time, burst time, and priority for each process:\n");
+    for (int i = 0; i < n; i++) {
+        pid[i] = i + 1;
+        printf("Process %d:\n", i + 1);
+        printf("Arrival Time: ");
+        scanf("%d", &at[i]);
+        printf("Burst Time: ");
+        scanf("%d", &bt[i]);
+        printf("Priority: ");
+        scanf("%d", &priority[i]);
+    }
+
+    printf("\nChoose the Scheduling Algorithm:\n");
+    printf("1. Priority Scheduling (Non-preemptive)\n");
+    printf("2. Priority Scheduling (Preemptive)\n");
+    printf("3. Round Robin Scheduling\n");
+    printf("Enter choice: ");
+    scanf("%d", &choice);
+
+    switch (choice) {
+        case 1:
+            prioritySchedulingNonPreemptive(n, bt, at, wt, tat, priority);
+            break;
+        case 2:
+            prioritySchedulingPreemptive(n, bt, at, wt, tat, priority);
+            break;
+        case 3: {
+            int quantum;
+            printf("Enter quantum for Round Robin: ");
+            scanf("%d", &quantum);
+            roundRobin(n, bt, at, wt, tat, quantum);
+            break;
+        }
+        default:
+            printf("Invalid choice!\n");
+            return 0;
+    }
+
+    printf("\nResults:\n");
+    printResults(n, pid, at, bt, wt, tat);
+
+    return 0;
+}
+
