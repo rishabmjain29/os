@@ -1,0 +1,46 @@
+#include <stdio.h>
+
+int main() {
+    int n, i, j;
+    printf("Enter the number of processes:");
+    scanf("%d", &n);
+
+    int burst[n], deadline[n], period[n], remain[n];
+    printf("Enter the CPU burst times:\n");
+    for (i = 0; i < n; i++) {
+        scanf("%d", &burst[i]);
+        remain[i] = burst[i];
+    }
+
+    printf("Enter the deadlines:\n");
+    for (i = 0; i < n; i++) scanf("%d", &deadline[i]);
+
+    printf("Enter the time periods:\n");
+    for (i = 0; i < n; i++) scanf("%d", &period[i]);
+
+    printf("\nEarliest Deadline Scheduling:\n");
+    printf("PID\tBurst\tDeadline\n");
+    for (i = 0; i < n; i++)
+        printf("%d\t%d\t%d\n", i+1, burst[i], deadline[i]);
+
+    int time = 0, max_time = 6;
+    printf("Scheduling occurs for %d ms\n\n", max_time);
+
+    while (time < max_time) {
+        int min_deadline = 9999, task = -1;
+        for (i = 0; i < n; i++) {
+            if (remain[i] > 0 && deadline[i] < min_deadline) {
+                min_deadline = deadline[i];
+                task = i;
+            }
+        }
+        if (task != -1) {
+            printf("%dms : Task %d is running.\n", time, task + 1);
+            remain[task]--;
+        }
+        time++;
+    }
+
+    return 0;
+}
+
