@@ -1,0 +1,164 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_FRAMES 10
+
+// Function to check if a page is in memory
+int isPageInMemory(int page, int frames[], int num_frames) {
+    for (int i = 0; i < num_frames; i++) {
+        if (frames[i] == page) {
+            return 1; // Page is in memory
+        }
+    }
+    return 0; // Page not in memory
+}
+
+// Function to find the page that is not used for the longest period (Optimal)
+int findOptimalPageToReplace(int frames[], int reference_string[], int num_frames, int num_pages, int current_index) {
+    int farthest = -1, page_to_replace = -1;
+    for (int i = 0; i < num_frames; i++) {
+        int found = 0;
+        for (int j = current_index + 1; j < num_pages; j++) {
+            if (frames[i] == reference_string[j]) {
+                found = 1;
+                if (j > farthest) {
+                    farthest = j;
+                    page_to_replace = i;
+                }
+                break;
+            }
+        }
+        if (!found) {
+            return i; // If the page is never used again, replace it
+        }
+    }
+    return page_to_replace;
+}
+
+// Function to simulate LRU
+void LRU(int reference_string[], int num_pages, int num_frames) {
+    int frames[MAX_FRAMES], page_faults = 0, last_used[MAX_FRAMES];
+
+    // Initialize the frame and last used time
+    for (int i = 0; i < num_frames; i++) {
+        frames[i] = -1;
+        last_used[i] = -1;
+    }
+
+    for (int i = 0; i < num_pages; i++) {
+        int page = reference_string[i];
+
+        // Check if the page is already in memory
+        if (!isPageInMemory(page, frames, num_frames)) {
+            int replaced = 0;
+
+            // If there is space in frames, place the page in the first empty slot
+            for (int j = 0; j < num_frames; j++) {
+                if (frames[j] == -1) {
+                    frames[j] = page;
+                    page_faults++;
+                    replaced = 1;
+                    break;
+                }
+            }
+
+            // If no space is available, replace the LRU page
+            if (!replaced) {
+                int lru_index = 0;
+                for (int j = 1; j < num_frames; j++) {
+                    if (last_used[j] < last_used[lru_index]) {
+                        lru_index = j;
+                    }
+                }
+                frames[lru_index] = page;
+                page_faults++;
+            }
+        }
+
+        // Update the last used time of the page
+        for (int j = 0; j < num_frames; j++) {
+            if (frames[j] == page) {
+                last_used[j] = i;
+                break;
+            }
+        }
+    }
+
+    printf("LRU Page Faults: %d\n", page_faults);
+}
+
+// Function to simulate Optimal Page Replacement
+void Optimal(int reference_string[], int num_pages, int num_frames) {
+    int frames[MAX_FRAMES], page_faults = 0;
+
+    // Initialize the frame
+    for (int i = 0; i < num_frames; i++) {
+        frames[i] = -1;
+    }
+
+    for (int i = 0; i < num_pages; i++) {
+        int page = reference_string[i];
+
+        // Check if the page is already in memory
+        if (!isPageInMemory(page, frames, num_frames)) {
+            int replaced = 0;
+
+            // If there is space in frames, place the page in the first empty slot
+            for (int j = 0; j < num_frames; j++) {
+                if (frames[j] == -1) {
+                    frames[j] = page;
+                    page_faults++;
+                    replaced = 1;
+                    break;
+                }
+            }
+
+            // If no space is available, replace the optimal page
+            if (!replaced) {
+                int page_to_replace = findOptimalPageToReplace(frames, reference_string, num_frames, num_pages, i);
+                frames[page_to_replace] = page;
+                page_faults++;
+            }
+        }
+    }
+
+    printf("Optimal Page Faults: %d\n", page_faults);
+}
+
+// Function to simulate FIFO
+void FIFO(int reference_string[], int num_pages, int num_frames) {
+    int frames[MAX_FRAMES], page_faults = 0, front = 0;
+
+    // Initialize the frame
+    for (int i = 0; i < num_frames; i++) {
+        frames[i] = -1;
+    }
+
+    for (int i = 0; i < num_pages; i++) {
+        int page = reference_string[i];
+
+        // Check if the page is already in memory
+        if (!isPageInMemory(page, frames, num_frames)) {
+            int replaced = 0;
+
+            // If there is space in frames, place the page in the first empty slot
+            for (int j = 0; j < num_frames; j++) {
+                if (frames[j] == -1) {
+                    frames[j] = page;
+                    page_faults++;
+                    replaced = 1;
+                    break;
+                }
+            }
+
+            // If no space is available, replace the page at the front of the queue
+            if (!replaced) {
+                frames[front] = page;
+                front = (front + 1) % num_frames;
+                page_faults++;
+            }
+        }
+    }
+
+    printf("FIFO Page Faults: %d\n", page_faults);
+}
